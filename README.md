@@ -23,23 +23,13 @@ docker buildx build \
 
 This is used internally by Disco, but the concept looks like this.
 
-It creates a container from the image, connected to the Docker network, and publishing a port for SSH, but with a random port instead of `2222`.
+It creates a temporary container from the image, connected to the Docker network, and publishing a port for SSH, but with a random port instead of `2222`, and a random password instead of `Password1`.
 ```bash
-docker run -it --network disco-main --publish 2222:22 letsdiscodev/sshtunnel sh
+docker run -it --network disco-main --publish 2222:22 --env PASSWORD=Password1 letsdiscodev/sshtunnel
 ```
 
-and then in the container, we run a few commands to accept SSH connections, but with a unique one time password instead of `Password1`.
+Then the CLI can create an SSH tunnel to, for example, Postgres, with the equivalent of this command:
 
-```bash
-sed -i '/AllowTcpForwarding no/d' /etc/ssh/sshd_config
-echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
-echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
-echo 'AllowTcpForwarding yes' >> /etc/ssh/sshd_config
-echo -n 'root:Password1' | chpasswd
-/usr/sbin/sshd -D
-```
-
-Then the CLI can create an SSH tunnel to, for example, Postgres. It's the equivalent of this command:
 ```bash
 ssh -L 5432:postgres-instance-pallid-knot-postgres:5432 root@disco.example.com -p 2222
 ```
