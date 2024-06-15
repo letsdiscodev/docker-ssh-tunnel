@@ -11,7 +11,7 @@ The goal of the image is just to speed up the parts that could be slow or unreli
 
 ## Build and push
 
-```
+```bash
 docker buildx build \
   --platform linux/amd64,linux/arm64/v8 \
   --tag letsdiscodev/sshtunnel \
@@ -42,4 +42,20 @@ echo -n 'root:Password1' | chpasswd
 Then the CLI can create an SSH tunnel to, for example, Postgres. It's the equivalent of this command:
 ```bash
 ssh -L 5432:postgres-instance-pallid-knot-postgres:5432 root@disco.example.com -p 2222
+```
+
+And that's it. Postgres is now accessible from `localhost` while the tunnel is connected.
+
+For example,
+```bash
+disco env:get DATABASE_URL --project my-project --disco disco.example.com
+```
+outputs
+```
+postgresql://so72kvhxban57ro9:OYOJ7AbYrUvamTbc@postgres-instance-pallid-knot-postgres/twsoh0a61sc3xfve
+```
+so you can connect to this database by replacing `postgres-instance-pallid-knot-postgres` with `localhost`
+
+```bash
+pgcli postgresql://so72kvhxban57ro9:OYOJ7AbYrUvamTbc@localhost/twsoh0a61sc3xfve
 ```
