@@ -1,2 +1,45 @@
-# docker-ssh-tunnel
-A Docker image to allow creating an SSH tunnel to access services like Postgres that are not exposed publicly.
+# Docker SSH Tunnel
+
+This is a Docker image used by Disco to create an ad hoc SSH tunnel when the
+user needs to access services that are not exposed.
+
+As it is, it's just Alpine with OpenSSH installed.
+
+It's configured when it's needed.
+
+The goal of the image is just to speed up the parts that could be slow or unreliable otherwise.
+
+## Build and push
+
+```
+docker buildx build \
+  --platform linux/amd64,linux/arm64/v8 \
+  --tag letsdiscodev/sshtunnel \
+  --push \
+  .
+```
+
+## Usage
+
+This is used internally by Disco, but the concept looks like this.
+
+It creates a container from the image, connected to the Docker network, and publishing a port for SSH, but with a random port instead of `2222`.
+```bash
+docker run -it --network disco-main --publish 2222:22 letsdiscodev/sshtunnel sh
+```
+
+and then in the container, we run a few commands to accept SSH connections, but with a unique one time password instead of `Password1`.
+
+```bash
+sed -i '/AllowTcpForwarding no/d' /etc/ssh/sshd_config
+echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
+echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+echo 'AllowTcpForwarding yes' >> /etc/ssh/sshd_config
+echo -n 'root:Password1' | chpasswd
+/usr/sbin/sshd -D
+```
+
+Then the CLI can create an SSH tunnel to, for example, Postgres. It's the equivalent of this command:
+```bash
+ssh -L 5432:postgres-instance-pallid-knot-postgres:5432 root@disco.example.com -p 2222
+```
